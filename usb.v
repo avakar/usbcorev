@@ -136,6 +136,8 @@ localparam
 reg[6:0] token_timeout;
 wire token_active = token_timeout != 1'b0;
 
+reg[1:0] handshake_latch;
+
 always @(posedge clk_48 or negedge rst_n) begin
     if (!rst_n) begin
         success <= 1'b0;
@@ -149,6 +151,7 @@ always @(posedge clk_48 or negedge rst_n) begin
         tx_transmit <= 1'b0;
         
         tx_enable_crc16 <= 1'b0;
+        handshake_latch <= 2'bxx;
     end else begin
         if (token_timeout != 1'b0)
             token_timeout <= token_timeout - 1'b1;
@@ -157,6 +160,7 @@ always @(posedge clk_48 or negedge rst_n) begin
             endpoint <= 1'sbx;
             direction_in <= 1'bx;
             setup <= 1'bx;
+            handshake_latch <= 2'bxx;
         end
 
         success <= 1'b0;
@@ -211,9 +215,9 @@ always @(posedge clk_48 or negedge rst_n) begin
                         end
                         pt_data: begin
                             if (recv_queue_1_valid && recv_crc16_ok) begin
-                                transaction_active <= 1'b0;
                                 if (handshake == hs_ack || handshake == hs_none)
                                     success <= 1'b1;
+                                handshake_latch <= handshake;
                                 state <= st_send_handshake;
                             end
                         end
@@ -244,6 +248,7 @@ always @(posedge clk_48 or negedge rst_n) begin
 
                 if (!tx_transmit && recv_short_idle) begin
                     if (handshake != hs_ack && handshake != hs_none) begin
+                        handshake_latch <= handshake;
                         state <= st_send_handshake;
                     end else begin
                         tx_data <= { !data_toggle, 3'b100, data_toggle, 3'b011 };
@@ -303,7 +308,7 @@ always @(posedge clk_48 or negedge rst_n) begin
                 tx_transmit <= tx_transmit;
 
                 if (!tx_transmit && recv_short_idle) begin
-                    case (handshake)
+                    case (handshake_latch)
                         hs_none: begin
                             state <= st_idle;
                         end
