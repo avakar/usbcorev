@@ -170,7 +170,7 @@ multisample5 se0_filter(
 reg[2:0] short_idle_counter;
 assign short_idle = short_idle_counter == 1'b0;
 always @(posedge clk_48) begin
-    if (se0 || !j)
+    if (se0 || !j || xpacket)
         short_idle_counter <= 3'b111;
     else if (short_idle_counter != 1'b0)
         short_idle_counter <= short_idle_counter - 1'b1;
