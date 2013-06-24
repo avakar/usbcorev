@@ -45,7 +45,7 @@ reg crc_enabled;
 wire dump_crc = state == st_crc1 || state == st_crc2;
 wire crc_out;
 wire d = dump_crc? !crc_out: tx_data[0];
-wire se0 = state == st_eop1 || state == st_eop2;
+wire se0 = !bit_stuff && (state == st_eop1 || state == st_eop2);
 
 wire tx_data_empty = (tx_data[8:2] == 1'b0);
 assign data_strobe = transmit && tx_data_empty && bit_strobe;
@@ -120,7 +120,7 @@ always @(posedge clk_48 or negedge rst_n) begin
 end
 
 reg last_j;
-wire j = state == st_idle || state == st_eop3? 1'b1: (bit_stuff || !d? !last_j: last_j);
+wire j = state == st_idle || state == st_eop3? 1'b1: ((bit_stuff || !d)? !last_j: last_j);
 always @(posedge clk_48) begin
     if (bit_strobe)
         last_j <= usb_tx_en? j: 1'b1;
