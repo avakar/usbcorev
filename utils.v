@@ -78,21 +78,6 @@ end
 endmodule
 
 //---------------------------------------------------------------------
-module sync(
-    input clk,
-    input i,
-    output o);
-
-reg[2:0] s;
-assign o = s[1];
-
-always @(posedge clk) begin
-    s <= { s[1:0], i };
-end
-    
-endmodule
-
-//---------------------------------------------------------------------
 module nrzi_decode(
     input clk,
     input clken,
