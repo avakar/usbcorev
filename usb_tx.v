@@ -2,9 +2,9 @@ module usb_tx(
     input rst_n,
     input clk_48,
 
-    output usb_dp,
-    output usb_dn,
-    output usb_tx_en,
+    output tx_en,
+    output tx_j,
+    output tx_se0,
     
     input transmit,
     input[7:0] data,
@@ -37,7 +37,7 @@ localparam
     st_crc1 = 3'b110,
     st_crc2 = 3'b111;
 
-assign usb_tx_en = (state != st_idle);
+assign tx_en = (state != st_idle);
 
 reg[8:0] tx_data;
 reg crc_enabled;
@@ -94,7 +94,7 @@ end
     
 always @(posedge clk_48) begin
     if (tx_strobe) begin
-        if (!usb_tx_en) begin
+        if (!tx_en) begin
             tx_data <= 9'b110000000; // starting with J, go through KJKJKJKK
             crc_enabled <= 1'b0;
         end else if (tx_data_empty) begin
@@ -123,11 +123,11 @@ reg last_j;
 wire j = state == st_idle || state == st_eop3? 1'b1: ((bit_stuff || !d)? !last_j: last_j);
 always @(posedge clk_48) begin
     if (bit_strobe)
-        last_j <= usb_tx_en? j: 1'b1;
+        last_j <= tx_en? j: 1'b1;
 end
 
-assign usb_dp = se0? 1'b0: j;
-assign usb_dn = se0? 1'b0: !j;
+assign tx_j = j;
+assign tx_se0 = se0;
 
 usb_crc16 tx_crc(
     .rst_n(rst_n && state != st_idle),

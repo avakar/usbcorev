@@ -2,15 +2,13 @@ module usb(
     input rst_n,
     input clk_48,
 
-    input dp_in,
-    input dn_in,
-    input d0p_in,
-    input d0n_in,
+    input rx_j,
+    input rx_se0,
 
-    output dp_out,
-    output dn_out,
-    output d_dir_out,
-    
+    output tx_en,
+    output tx_j,
+    output tx_se0,
+
     input[6:0] usb_address,
 
     output usb_rst,
@@ -48,10 +46,8 @@ usb_recv recv(
     .rst_n(rst_n),
     .clk_48(clk_48),
 
-    .dp_in(dp_in),
-    .dn_in(dn_in),
-    .d0p_in(d0p_in),
-    .d0n_in(d0n_in),
+    .rx_j(rx_j),
+    .rx_se0(rx_se0),
 
     .short_idle(recv_short_idle),
     .usb_rst(usb_rst),
@@ -74,10 +70,10 @@ usb_tx tx(
     .rst_n(rst_n),
     .clk_48(clk_48),
 
-    .usb_dp(dp_out),
-    .usb_dn(dn_out),
-    .usb_tx_en(d_dir_out),
-    
+    .tx_en(tx_en),
+    .tx_j(tx_j),
+    .tx_se0(tx_se0),
+
     .transmit(tx_transmit),
     .data(tx_data),
     .data_strobe(tx_data_strobe),
@@ -276,7 +272,7 @@ always @(posedge clk_48 or negedge rst_n) begin
             end
             st_prep_recv_ack: begin
                 token_timeout <= 7'h7f;
-                if (!d_dir_out && !recv_packet)
+                if (!tx_en && !recv_packet)
                     state <= st_recv_ack;
             end
             st_recv_ack: begin
@@ -334,7 +330,7 @@ always @(posedge clk_48 or negedge rst_n) begin
             end
             default: begin
                 transaction_active <= 1'b0;
-                if (!d_dir_out && !recv_packet)
+                if (!tx_en && !recv_packet)
                     state <= st_idle;
             end
         endcase

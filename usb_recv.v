@@ -131,10 +131,8 @@ module usb_recv(
     input rst_n,
     input clk_48,
 
-    input dp_in,
-    input dn_in,
-    input d0p_in,
-    input d0n_in,
+    input rx_j,
+    input rx_se0,
 
     output short_idle,
     output usb_rst,
@@ -147,24 +145,16 @@ module usb_recv(
     output xcrc16_ok
     );
 
-wire d_presync;
-IBUFDS diff_buffer(.I(dp_in), .IB(dn_in), .O(d_presync));
-
-wire d_prefilter, d0p, d0n;
-sync d_sync(.clk(clk_48), .i(d_presync), .o(d_prefilter));
-sync d0p_sync(.clk(clk_48), .i(d0p_in), .o(d0p));
-sync d0n_sync(.clk(clk_48), .i(d0n_in), .o(d0n));
-
 wire j;
 multisample3 d_filter(
     .clk(clk_48),
-    .in(d_prefilter),
+    .in(rx_j),
     .out(j));
 
 wire se0;
 multisample5 se0_filter(
     .clk(clk_48),
-    .in(!d0p && !d0n),
+    .in(rx_se0),
     .out(se0));
 
 reg[2:0] short_idle_counter;
