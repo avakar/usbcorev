@@ -69,9 +69,9 @@ end
 
 always @(*) begin
     if (ctrl_dir_in)
-        ctrl_rd_data = { 1'b0, ep_in_full,  ep_in_cnt,  2'b0, ep_in_toggle,  ep_in_stall,  1'b0, ep_setup, 1'b0, ep_in_full  };
+        ctrl_rd_data = { 1'b0, ep_in_cnt,  2'b0, ep_in_toggle,  ep_in_stall,  1'b0, ep_setup, 1'b0, ep_in_full  };
     else
-        ctrl_rd_data = { 1'b0, ep_out_full, ep_out_cnt, 2'b0, ep_out_toggle, ep_out_stall, 1'b0, ep_setup, 1'b0, ep_out_full };
+        ctrl_rd_data = { 1'b0, ep_out_cnt, 2'b0, ep_out_toggle, ep_out_stall, 1'b0, ep_setup, 1'b0, ep_out_full };
 end
 
 always @(posedge clk) begin
