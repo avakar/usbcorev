@@ -48,7 +48,7 @@ wire d = dump_crc? !crc_out: tx_data[0];
 wire se0 = !bit_stuff && (state == st_eop1 || state == st_eop2);
 
 wire tx_data_empty = (tx_data[8:2] == 1'b0);
-assign data_strobe = transmit && tx_data_empty && bit_strobe;
+assign data_strobe = transmit && tx_data_empty && tx_strobe;
 
 always @(posedge clk_48 or negedge rst_n) begin
     if (!rst_n) begin
