@@ -14,7 +14,7 @@ module usb_ep(
     input ctrl_dir_in,
     output reg[15:0] ctrl_rd_data,
     input[15:0] ctrl_wr_data,
-    input ctrl_wr_strobe
+    input[1:0] ctrl_wr_en
     );
 
 localparam
@@ -89,20 +89,23 @@ always @(posedge clk) begin
         end
     end
 
-    if (ctrl_wr_strobe && ctrl_dir_in) begin
+    if (ctrl_wr_en[1] && ctrl_dir_in) begin
         ep_in_cnt <= ctrl_wr_data[14:8];
+    end
+
+    if (ctrl_wr_en[0] && ctrl_dir_in) begin
         if (ctrl_wr_data[7])
             ep_in_toggle <= 1'b0;
         if (ctrl_wr_data[6])
             ep_in_toggle <= 1'b1;
         ep_in_stall <= ctrl_wr_data[4];
-        if (ctrl_wr_data[15] || ctrl_wr_data[1])
+        if (ctrl_wr_data[1])
             ep_in_full <= 1'b0;
-        if (ctrl_wr_data[14] || ctrl_wr_data[0])
+        if (ctrl_wr_data[0])
             ep_in_full <= 1'b1;
     end
 
-    if (ctrl_wr_strobe && !ctrl_dir_in) begin
+    if (ctrl_wr_en[0] && !ctrl_dir_in) begin
         if (ctrl_wr_data[7])
             ep_out_toggle <= 1'b0;
         if (ctrl_wr_data[6])
@@ -110,9 +113,9 @@ always @(posedge clk) begin
         ep_out_stall <= ctrl_wr_data[4];
         if (ctrl_wr_data[3])
             ep_setup <= 1'b0;
-        if (ctrl_wr_data[15] || ctrl_wr_data[1])
+        if (ctrl_wr_data[1])
             ep_out_full <= 1'b0;
-        if (ctrl_wr_data[14] || ctrl_wr_data[0])
+        if (ctrl_wr_data[0])
             ep_out_full <= 1'b1;
     end
 end

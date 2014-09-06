@@ -171,10 +171,12 @@ always @(posedge clk_48 or negedge rst_n) begin
                     if (recv_pid[1:0] == pt_token) begin
                         state <= st_data;
                     end else begin
-                        if (recv_pid[1:0] == pt_data && !recv_pid[2] && token_active)
+                        if (recv_pid[1:0] == pt_data && !recv_pid[2] && token_active) begin
+                            handshake_latch <= handshake;
                             state <= recv_pid[3] == data_toggle? st_data: st_send_ack;
-                        else
+                        end else begin
                             state <= st_err;
+                        end
                     end
                 end
             end
@@ -211,9 +213,8 @@ always @(posedge clk_48 or negedge rst_n) begin
                         end
                         pt_data: begin
                             if (recv_queue_1_valid && recv_crc16_ok) begin
-                                if (handshake == hs_ack || handshake == hs_none)
+                                if (handshake_latch == hs_ack || handshake_latch == hs_none)
                                     success <= 1'b1;
-                                handshake_latch <= handshake;
                                 state <= st_send_handshake;
                             end
                         end
@@ -230,7 +231,7 @@ always @(posedge clk_48 or negedge rst_n) begin
                                 state <= st_err;
                         end
                         pt_data: begin
-                            if (recv_queue_1_valid)
+                            if (recv_queue_1_valid && (handshake_latch == hs_ack || handshake_latch == hs_none))
                                 data_strobe <= 1'b1;
                         end
                         default: begin
