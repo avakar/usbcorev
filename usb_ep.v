@@ -7,14 +7,16 @@ module usb_ep(
     input[6:0] cnt,
 
     output reg toggle,
+    output bank_usb,
     output reg[1:0] handshake,
-    output bank,
+    output bank_in,
+    output bank_out,
     output in_data_valid,
 
     input ctrl_dir_in,
-    output reg[31:0] ctrl_rd_data,
-    input[31:0] ctrl_wr_data,
-    input[3:0] ctrl_wr_en
+    output reg[15:0] ctrl_rd_data,
+    input[15:0] ctrl_wr_data,
+    input[1:0] ctrl_wr_en
     );
 
 localparam
@@ -25,6 +27,7 @@ localparam
 
 reg ep_setup;
 reg ep_out_full;
+reg ep_out_empty;
 reg ep_in_full;
 reg ep_out_stall;
 reg ep_in_stall;
@@ -33,8 +36,10 @@ reg ep_in_toggle;
 reg[6:0] ep_in_cnt;
 reg[6:0] ep_out_cnt;
 
-assign bank = 1'b0;
 assign in_data_valid = (cnt != ep_in_cnt);
+assign bank_usb = 1'b0;
+assign bank_in = 1'b0;
+assign bank_out = 1'b0;
 
 always @(*) begin
     if (!direction_in && setup)
@@ -57,7 +62,7 @@ always @(*) begin
             handshake = hs_nak;
         end
     end else begin
-        if (setup || (!ep_out_stall && !ep_setup && !ep_out_full)) begin
+        if (setup || (!ep_out_stall && !ep_setup && ep_out_full)) begin
             handshake = hs_ack;
         end else if (!ep_setup && ep_out_stall) begin
             handshake = hs_stall;
@@ -68,53 +73,77 @@ always @(*) begin
 end
 
 always @(*) begin
-    if (ctrl_dir_in)
-        ctrl_rd_data = { 1'b0, ep_in_cnt,  8'b0, 2'b0, ep_in_toggle,  ep_in_stall,  1'b0, ep_setup, 1'b0, ep_in_full  };
-    else
-        ctrl_rd_data = { 1'b0, ep_out_cnt, 8'b0, 2'b0, ep_out_toggle, ep_out_stall, 1'b0, ep_setup, 1'b0, ep_out_full };
+    if (ctrl_dir_in) begin
+        ctrl_rd_data[15:8] = ep_in_cnt;
+        ctrl_rd_data[7:0] = { ep_in_toggle, ep_in_stall, 1'b0, !ep_in_full, ep_in_full };
+    end else begin
+        ctrl_rd_data[15:8] = ep_out_cnt;
+        ctrl_rd_data[7:0] = { ep_out_toggle, ep_out_stall, ep_setup, ep_out_empty, ep_out_full };
+    end
 end
+
+wire flush = ctrl_wr_data[5] || ctrl_wr_data[4] || ctrl_wr_data[3];
 
 always @(posedge clk) begin
     if (success) begin
         if (direction_in) begin
-            ep_in_toggle <= !ep_in_toggle;
             ep_in_full <= 1'b0;
+            ep_in_toggle <= !ep_in_toggle;
         end else begin
             if (setup)
                 ep_setup <= 1'b1;
 
             ep_out_toggle <= !ep_out_toggle;
-            ep_out_full <= 1'b1;
+            ep_out_empty <= 1'b0;
+            ep_out_full <= 1'b0;
             ep_out_cnt <= cnt;
         end
     end
 
-    if (ctrl_wr_en[2] && ctrl_dir_in) begin
-        ep_in_cnt <= ctrl_wr_data[22:16];
+    if (ctrl_wr_en[1] && ctrl_dir_in) begin
+        ep_in_cnt <= ctrl_wr_data[14:8];
     end
 
     if (ctrl_wr_en[0] && ctrl_dir_in) begin
-        if (ctrl_wr_data[7])
+        if (ctrl_wr_data[5]) begin
             ep_in_toggle <= 1'b0;
-        if (ctrl_wr_data[6])
+            ep_in_stall <= 1'b0;
+        end
+        if (ctrl_wr_data[4]) begin
             ep_in_toggle <= 1'b1;
-        ep_in_stall <= ctrl_wr_data[4];
-        if (ctrl_wr_data[1])
+            ep_in_stall <= 1'b0;
+        end
+        if (ctrl_wr_data[3])
+            ep_in_stall <= 1'b1;
+
+        if (flush)
             ep_in_full <= 1'b0;
+
         if (ctrl_wr_data[0])
             ep_in_full <= 1'b1;
     end
 
     if (ctrl_wr_en[0] && !ctrl_dir_in) begin
-        if (ctrl_wr_data[7])
+        if (ctrl_wr_data[5]) begin
             ep_out_toggle <= 1'b0;
-        if (ctrl_wr_data[6])
+            ep_out_stall <= 1'b0;
+        end
+        if (ctrl_wr_data[4]) begin
             ep_out_toggle <= 1'b1;
-        ep_out_stall <= ctrl_wr_data[4];
+            ep_out_stall <= 1'b0;
+        end
         if (ctrl_wr_data[3])
+            ep_out_stall <= 1'b1;
+
+        if (flush) begin
+            ep_out_full <= 1'b0;
+            ep_out_empty <= 1'b1;
+        end
+
+        if (ctrl_wr_data[2])
             ep_setup <= 1'b0;
         if (ctrl_wr_data[1])
-            ep_out_full <= 1'b0;
+            ep_out_empty <= 1'b1;
         if (ctrl_wr_data[0])
             ep_out_full <= 1'b1;
     end
