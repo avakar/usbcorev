@@ -12,9 +12,9 @@ module usb_ep(
     output in_data_valid,
 
     input ctrl_dir_in,
-    output reg[15:0] ctrl_rd_data,
-    input[15:0] ctrl_wr_data,
-    input[1:0] ctrl_wr_en
+    output reg[31:0] ctrl_rd_data,
+    input[31:0] ctrl_wr_data,
+    input[3:0] ctrl_wr_en
     );
 
 localparam
@@ -69,9 +69,9 @@ end
 
 always @(*) begin
     if (ctrl_dir_in)
-        ctrl_rd_data = { 1'b0, ep_in_cnt,  2'b0, ep_in_toggle,  ep_in_stall,  1'b0, ep_setup, 1'b0, ep_in_full  };
+        ctrl_rd_data = { 1'b0, ep_in_cnt,  8'b0, 2'b0, ep_in_toggle,  ep_in_stall,  1'b0, ep_setup, 1'b0, ep_in_full  };
     else
-        ctrl_rd_data = { 1'b0, ep_out_cnt, 2'b0, ep_out_toggle, ep_out_stall, 1'b0, ep_setup, 1'b0, ep_out_full };
+        ctrl_rd_data = { 1'b0, ep_out_cnt, 8'b0, 2'b0, ep_out_toggle, ep_out_stall, 1'b0, ep_setup, 1'b0, ep_out_full };
 end
 
 always @(posedge clk) begin
@@ -89,8 +89,8 @@ always @(posedge clk) begin
         end
     end
 
-    if (ctrl_wr_en[1] && ctrl_dir_in) begin
-        ep_in_cnt <= ctrl_wr_data[14:8];
+    if (ctrl_wr_en[2] && ctrl_dir_in) begin
+        ep_in_cnt <= ctrl_wr_data[22:16];
     end
 
     if (ctrl_wr_en[0] && ctrl_dir_in) begin
