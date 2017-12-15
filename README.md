@@ -2,7 +2,7 @@ This core allows you to embed a full-speed (12Mbps) USB 2.0 device core into you
 
 ## Clocks
 
-The core requires a a reasonably precise 48MHz clock. You'd better derive them from a crystal oscillator.
+The core requires a reasonably precise 48MHz clock. You'd better derive it from a crystal oscillator.
 
 ## Physical interface
 
@@ -10,12 +10,12 @@ Since USB uses a bit of a weird signaling on its half-duplex (almost-)differenti
 you'll, need to do a little bit of work to connect it to the core. The following five signals
 connect to D+ and D- USB signals.
 
- * input rx_j -- the differential value on D+/D- lines
- * input rx_se0 -- single-ended zero detected: should be set when both D+ and D- lines are zero
+ * `input rx_j` -- the differential value on D+/D- lines
+ * `input rx_se0` -- single-ended zero detected: should be set when both D+ and D- lines are zero
 
- * output tx_se0 -- transmit zeros on both USB lines; has priority over tx_j
- * output tx_j -- transmit tx_j to D+ and ~tx_j to D-
- * output tx_en -- enable the trasmitter
+ * `output tx_se0` -- transmit zeros on both USB lines; has priority over `tx_j`
+ * `output tx_j` -- transmit `tx_j` to D+ and `~tx_j` to D-
+ * `output tx_en` -- enable the trasmitter
 
 If your FPGA doesn't have a differential receiver, then you can simply use two pins and connect them as follows.
 However, without a differential receiver, you will be outside of the USB specs.
