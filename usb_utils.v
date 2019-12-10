@@ -144,18 +144,20 @@ module usb_reset_detect(
     input se0,
     output usb_rst);
 
+localparam cntr_rst_val = 19'd480000;
+
 reg[18:0] cntr;
 assign usb_rst = cntr == 1'b0;
 
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-        cntr <= 1'b0;
+        cntr <= cntr_rst_val;
     end else begin
         if (se0) begin
             if (!usb_rst)
                 cntr <= cntr - 1'b1;
         end else begin
-            cntr <= 19'd480000;
+            cntr <= cntr_rst_val;
         end
     end
 end
