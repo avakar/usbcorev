@@ -1,0 +1,34 @@
+CAPI=2:
+
+name : ::usbcorev:0
+
+filesets:
+  rtl:
+    files:
+      - usb_ep_banked.v
+      - usb_ep.v
+      - usb_recv.v
+      - usb_tx.v
+      - usb_utils.v
+      - usb.v
+      - utils.v
+    file_type : verilogSource
+
+  sky130:
+    files: [data/sky130.tcl : {file_type : tclSource}]
+
+targets:
+  default:
+    filesets : [rtl]
+
+  lint:
+    default_tool : verilator
+    filesets : [rtl]
+    tools:
+      verilator: {mode: lint-only}
+    toplevel: usb
+
+  sky130:
+    default_tool : openlane
+    filesets: [rtl, sky130]
+    toplevel : usb
